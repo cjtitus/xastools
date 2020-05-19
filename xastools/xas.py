@@ -6,12 +6,12 @@ import datetime
 from xastools.utils import find_mono_offset, correct_mono, appendMatrices, appendArrays, appendVectors
 from xastools.read import writeSSRL, readSSRL
 
-def file2spectrum(filename, bintype='xas'):
+def file2spectrum(filename):
     data, header = readSSRL(filename)
-    return XAS(data, bintype=bintype, **header)
+    return XAS(data, **header)
 
-def files2spectrum(filenames, bintype='xas'):
-    spectra = [file2spectrum(filename, bintype) for filename in filenames]
+def files2spectrum(filenames):
+    spectra = [file2spectrum(filename) for filename in filenames]
     spectra.sort(key=lambda x: x.scans)
     return reduce(lambda x, y: x + y, spectra)
 
@@ -20,7 +20,10 @@ class XAS:
     def __init__(self, data, sample=None, scan=None, cols=None, offsets=None, weights=None, **kwargs):
         self.bintype = 'XAS'
         self.sample = sample
-        self.scans = np.array(scan, dtype=np.int)
+        if scan is not None:
+            self.scans = np.array(scan, dtype=np.int)
+        else:
+            self.scans = np.array(-1)
         self.data = np.array(data)
         self.cols = cols
         self.offsets = np.array(offsets, dtype=np.float)
@@ -35,7 +38,7 @@ class XAS:
         weights = appendArrays(self.weights, y.weights)
         offsets = appendArrays(self.offsets, y.offsets)
         scans = appendVectors(self.scans, y.scans)
-        return XAS(data, self.bintype, self.sample, scans, self.cols, offsets, weights)
+        return XAS(data, self.sample, scans, self.cols, offsets, weights)
 
     def __iadd__(self, y):
         if y == None:
@@ -61,7 +64,7 @@ class XAS:
         offsets = self.offsets.copy()
         scans = self.scans.copy()
         cols = copy(cols)
-        return XAS(data, self.bintype, self.sample, scans, cols, offsets, weights)
+        return XAS(data, self.self.sample, scans, cols, offsets, weights)
 
     def getColIdx(self, cols):
         if not isinstance(cols, string_types):

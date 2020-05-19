@@ -23,7 +23,10 @@ def readSSRL(filename):
         slitline = f.readline().rstrip('\n')
         manipline = f.readline().rstrip('\n')
         scanline = f.readline().split()
-        scan = scanline[1]
+        try:
+            scan = scanline[1]
+        except:
+            scan = None
         for n in range(2): f.readline()
         f.readline()
         weightline = f.readline().split()
