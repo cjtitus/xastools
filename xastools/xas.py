@@ -108,9 +108,13 @@ class XAS:
 
         if offsetMono:
             deltaE = self.getOffsets('MONO')
-            if len(y.shape) == 3:
+            if len(deltaE) > 1:
                 for n in range(y.shape[-1]):
                     y[..., n] = correct_mono(x, deltaE[..., n], y[..., n])
+            elif len(y.shape) == 2:
+                for n in range(y.shape[-1]):
+                    y[..., n] = correct_mono(x, deltaE[..., n], y[..., n])
+                
         if offset:
             o = self.getOffsets(cols)
             y -= o[np.newaxis, ...]
@@ -133,6 +137,18 @@ class XAS:
             return y
 
     def plot(self, col, individual=False, nstack=7, **kwargs):
+        """See getData for all kwargs
+
+        :param col: 
+        :param individual: 
+        :param nstack: 
+        :param offsetMono:
+        :param offset:
+        :returns: 
+        :rtype: 
+
+        """
+        
         x, data = self.getData(col, individual=individual, **kwargs)
         if individual:
             scans = self.scans
@@ -182,9 +198,12 @@ class XAS:
 
     def setMonoOffset(self, deltaE):
         mono_idx = self.getColIdx('MONO')
-        for n, E in enumerate(deltaE):
-            self.offsets[mono_idx, n] = E
-
+        if len(self.offsets.shape) == 2:
+            for n, E in enumerate(deltaE):
+                self.offsets[mono_idx, n] = E
+        else:
+            self.offsets[mono_idx] = deltaE
+    
     def findMonoOffset(self, edge, col='REF', width=5):
         x = self['MONO']
         y = self[col]
