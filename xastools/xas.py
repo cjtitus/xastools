@@ -17,17 +17,20 @@ def files2spectrum(filenames):
 
 
 class XAS:
-    def __init__(self, data, sample=None, scan=None, cols=None, offsets=None, weights=None, **kwargs):
+    def __init__(self, data, sample=None, scan=None, cols=None, offsets=None, weights=None, loadid=None, cmd=None, **kwargs):
         self.bintype = 'XAS'
         self.sample = sample
         if scan is not None:
             self.scans = np.array(scan, dtype=np.int)
         else:
             self.scans = np.array(-1)
+        self.loadid = loadid
+        self.cmd = cmd
         self.data = np.array(data)
         self.cols = cols
         self.offsets = np.array(offsets, dtype=np.float)
         self.weights = np.array(weights, dtype=np.float)
+        self.kwargs = kwargs
 
     def __add__(self, y):
         if y == None:
@@ -38,7 +41,7 @@ class XAS:
         weights = appendArrays(self.weights, y.weights)
         offsets = appendArrays(self.offsets, y.offsets)
         scans = appendVectors(self.scans, y.scans)
-        return XAS(data, self.sample, scans, self.cols, offsets, weights)
+        return XAS(data, self.sample, scans, self.cols, offsets, weights, self.loadid, self.cmd, **self.kwargs)
 
     def __iadd__(self, y):
         if y == None:
@@ -64,7 +67,7 @@ class XAS:
         offsets = self.offsets.copy()
         scans = self.scans.copy()
         cols = copy(cols)
-        return XAS(data, self.self.sample, scans, cols, offsets, weights)
+        return XAS(data, self.self.sample, scans, cols, offsets, weights, self.loadid, self.cmd, **self.kwargs)
 
     def getColIdx(self, cols):
         if not isinstance(cols, string_types):
@@ -103,17 +106,20 @@ class XAS:
         """
         x = self[xcol]
         if len(x.shape) == 2:
+            multiscan = True
             x = x[:, 0]
+        else:
+            multiscan = False
+            
         y = self.getCols(cols)
 
         if offsetMono:
             deltaE = self.getOffsets('MONO')
-            if len(deltaE) > 1:
+            if multiscan:
                 for n in range(y.shape[-1]):
                     y[..., n] = correct_mono(x, deltaE[..., n], y[..., n])
-            elif len(y.shape) == 2:
-                for n in range(y.shape[-1]):
-                    y[..., n] = correct_mono(x, deltaE[..., n], y[..., n])
+            else:
+                    y = correct_mono(x, deltaE, y)
                 
         if offset:
             o = self.getOffsets(cols)
@@ -173,28 +179,36 @@ class XAS:
             ax.legend()        
         return fig, ax
     
-    def writeSSRL(self, filename, date=None, sample='sample', loadid='0', cmd='cmd', slits=None, manip=None, norm='I0', offsetMono=False):
+    def writeSSRL(self, filename, date=None, sample=None, loadid=None, cmd=None, slits=None, manip=None, norm='I0', offsetMono=False):
         if self.scans.size > 1:
             scan = int(self.scans[0])
-            weights = self.weights[0, :]
-            offsets = self.offsets[0, :]
+            weights = self.weights[:, 0]
+            offsets = self.offsets[:, 0]
         else:
             scan = int(self.scans)
             weights = self.weights
             offsets = self.offsets
-        sample = self.sample
+        if sample is None:
+            sample = self.sample
+        if loadid is None:
+            loadid = self.loadid
+        if cmd is None:
+            cmd = self.cmd
+        if slits is None:
+            slits = self.kwargs.get('slits', None)
         cols = self.cols
         if norm is not None:
             i0 = self[norm]
             data = self.data.copy()
-            data[:, 3:, ...] = np.mean(i0, axis=0)[np.newaxis, np.newaxis, ...]*self.getData(self.cols[3:], offsetMono=offsetMono, return_x=False, individual=True)/i0[:, np.newaxis, ...]
+            data[:, 3:, ...] = self.getData(self.cols[3:], offsetMono=offsetMono, return_x=False, individual=True)/i0[:, np.newaxis, ...]
+            data[:, self.getColIdx(norm), ...] = i0[:, np.newaxis, ...]
         if len(data.shape) > 2:
             data = np.mean(data, axis=-1)
         if offsetMono:
             c1 = "Mono corrected"
         else:
             c1 = ""
-        writeSSRL(filename, cols, data, date=date, sample=sample, loadid=loadid, scan=scan, weights=weights, offsets=None, c1=c1)
+        writeSSRL(filename, cols, data, date, sample, loadid, cmd, scan, slits, weights=weights, offsets=None, c1=c1)
 
     def setMonoOffset(self, deltaE):
         mono_idx = self.getColIdx('MONO')

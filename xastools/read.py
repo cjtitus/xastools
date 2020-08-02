@@ -43,15 +43,16 @@ def readSSRL(filename):
     header['scan'] = scan
     header['weights'] = weightline
     header['offsets'] = offsetline
+    header['slits'] = map(lambda x: float(x), slitline.split()[1:])
     return data, header
 
 def writeSSRL(filename, cols, data, date=None, sample='sample', loadid='0', cmd='cmd', scan=None, slits=None, manip=None, weights=None, offsets=None, c1="", c2=""):
-    datafmt = ' %14.3f'
+    datafmt = ' %14.6g'
     scandata = {}
     for n, c in enumerate(cols):
         d = data[:, n]
         scandata[c] = list(map(lambda x: datafmt%x, d))
-
+    
     ncols = len(cols)
     npts = data.shape[0]
     if date is None:
@@ -63,7 +64,7 @@ def writeSSRL(filename, cols, data, date=None, sample='sample', loadid='0', cmd=
     if scan is None:
         scan = 0
     if weights is None:
-        header.append("".join([' %7.3f'%1]*ncols))
+        header.append("".join([' %7.3g'%1]*ncols))
     header = []
     header.append('SSRL                                  ')
     header.append(date)
@@ -74,21 +75,21 @@ def writeSSRL(filename, cols, data, date=None, sample='sample', loadid='0', cmd=
     header.append('4 2000 5 RST 2 1')
     header.append('Sample: ' + sample + '  loadid: ' + loadid)
     header.append('Command: ' + cmd)
-    header.append('Slits: %.2f %.2f'%slits)
-    header.append('Manipulator Position (XYZR): %.2f %.2f %.2f %.2f'%manip)
+    header.append('Slits: %.2f %.2f'%tuple(slits))
+    header.append('Manipulator Position (XYZR): %.2f %.2f %.2f %.2f'%tuple(manip))
     header.append('Scan: %d'%scan)
     header.append(c1)
     header.append(c2)
     header.append("Weights:")
     if weights is None:
-        header.append("".join([' %7.3f'%1]*ncols))
+        header.append("".join([' %7.3g'%1]*ncols))
     else:
-        header.append("".join([' %7.3f'%weight for weight in weights]))
+        header.append("".join([' %7.3g'%weight for weight in weights]))
     header.append("Offsets:")
     if offsets is None:
-        header.append("".join([' %7.3f'%0]*ncols))
+        header.append("".join([' %7.3g'%0]*ncols))
     else:
-        header.append("".join([' %7.3f'%offset for offset in offsets]))
+        header.append("".join([' %7.3g'%offset for offset in offsets]))
     header.append("Data:")
     for c in cols:
         header.append(c)
