@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+from __future__ import print_function
+from orgtools import *
+from glob import glob
+from xastools.xas import files2spectrum
+from os.path import join, basename
+import sys
+import argparse
+
+import matplotlib.pyplot as plt
+
+plt.ion()
+
+parser = argparse.ArgumentParser()
+parser.add_argument('filenames', nargs='*')
+parser.add_argument('-c', '--cols', nargs='?')
+parser.add_argument('-i', '--individual', action='store_true')
+parser.add_argument('-n', '--nstack', type=int)
+
+args = parser.parse_args()
+filenames = args.filenames
+
+if len(args.filenames) > 0:
+    filenames = args.filenames
+else:
+    filenames = [line.rstrip() for line in sys.stdin.readlines()]
+
+filenames.sort()
+
+cols = args.cols
+individual = args.individual
+nstack = args.nstack
+
+x = files2spectrum(filenames)
+x.plot(cols, individual, nstack=nstack)
+plt.show()
+a = input()

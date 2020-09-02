@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+from __future__ import print_function
+from orgtools import *
+from glob import glob
+from xastools.xas import files2spectrum
+from os.path import join, basename
+import sys
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('filenames', nargs='*')
+parser.add_argument('-i', '--infix', default='')
+parser.add_argument('-p', '--postfix', default='')
+parser.add_argument('-s', '--sample', default='')
+parser.add_argument('-d', '--dryrun', action='store_true')
+parser.add_argument('-o', '--output', default='.')
+parser.add_argument('--noshift', action='store_false')
+args = parser.parse_args()
+
+if len(args.filenames) > 0:
+    filenames = args.filenames
+else:
+    filenames = [line.rstrip() for line in sys.stdin.readlines()]
+
+filenames.sort()
+
+outputdir = args.output
+
+if args.infix != '':
+    infix = '_' + args.infix
+else:
+    infix = ''
+
+if args.postfix != '':
+    postfix = '_' + args.postfix
+else:
+    postfix = ''
+
+if args.sample == '':
+    sample = basename(filenames[0]).split('_')[0]
+else:
+    sample = args.sample
+    
+shift = args.noshift
+
+
+
+fdict = {}
+target = join(outputdir, sample + infix + postfix + '.dat')
+if args.dryrun:
+    print("Coadding: ", filenames, " to ", target)
+else:
+    x = files2spectrum(filenames)
+    x.writeSSRL(target, offsetMono=shift)

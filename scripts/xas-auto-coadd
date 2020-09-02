@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+from __future__ import print_function
+from orgtools import *
+from glob import glob
+from xastools.xas import files2spectrum
+from os.path import join, basename
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('date')
+parser.add_argument('-g', '--group', default=2, type=int)
+parser.add_argument('-d', '--dryrun', action='store_true')
+parser.add_argument('-o', '--output', default='')
+parser.add_argument('--noshift', action='store_false')
+args = parser.parse_args()
+
+date = args.date
+sourcedir = get_dir('data', date, 'spec_xas')
+
+if args.output == '':
+    targetdir = get_dir('data', 'xas')
+else:
+    targetdir = args.output
+
+ngroup = args.group
+shift = args.noshift
+
+filepaths = glob(join(sourcedir, '*.dat'))
+
+filepaths.sort()
+
+fdict = {}
+
+def get_sample_and_scan(f):
+    base = basename(f[:-4])
+    parts =  base.split('_')
+    scanno = int(parts[-1])
+    sample = '_'.join(parts[:-1])
+    return sample, scanno
+
+for f in filepaths:
+    sample, scan = get_sample_and_scan(f)
+    if sample in fdict:
+        fdict[sample][scan] = f
+    else:
+        fdict[sample] = {scan: f}
+    
+def separate_groups(scans, delta=2):
+    scans.sort()
+    grouplist = [[]]
+    grouplist[-1].append(scans[0])
+    for s in scans[1:]:
+        if s <= grouplist[-1][-1] + delta:
+            grouplist[-1].append(s)
+        else:
+            grouplist.append([s])
+    return grouplist
+
+def get_filenames(sample, scans):
+    fnames = []
+    for s in scans:
+        fnames.append(fdict[sample][s])
+    return fnames
+
+def exportGroup(filenames, targetname):
+    x = files2spectrum(filenames)
+    x.writeSSRL(targetname, offsetMono=shift)
+
+def scans_to_id(scans):
+    if len(scans) == 1:
+        return "%d"%scans[0]
+    else:
+        return "%dto%d"%(scans[0], scans[-1])
+    
+for sample in fdict:
+    print("Coadding ", sample)
+    scans = fdict[sample].keys()
+    grouplist = separate_groups(scans, ngroup)
+    for group in grouplist:
+        fnames = get_filenames(sample, group)
+        target = join(targetdir, sample + '_' + date + '_' + scans_to_id(group) + '.dat')
+        if args.dryrun:
+            print("Combine")
+            for f in fnames:
+                print(f)
+            print("To %s"%target)
+        else:
+            exportGroup(fnames, target)          
