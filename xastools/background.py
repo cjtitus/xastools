@@ -3,13 +3,13 @@ import numpy as np
 from scipy.special import erf
 from numpy.polynomial import Polynomial as P
 
-def double_jump(e, k, i1, i2, a=1, r=2, f='arctan'):
+def double_jump(e, k, i1, i2, a=1, r=2, f='erf'):
     """
     Normalized double arctan edge jump --- goes from 0 to a
     """
     return a*((r*edge_jump(e, k, i1, f) + edge_jump(e, k, i2, f))/(r+1))
 
-def edge_jump(e, k, i1, f='arctan'):
+def edge_jump(e, k, i1, f='erf'):
     if f == 'arctan':
         return (np.arctan(k*(e - i1)) + np.pi/2)/np.pi
     elif f == 'erf':

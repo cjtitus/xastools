@@ -97,7 +97,7 @@ def correct_mono(mono, offset, scancounts):
     scancounts_new = np.zeros_like(scancounts)
     if len(scancounts.shape) == 2:
         for n in range(scancounts.shape[1]):
-            count_f = UnivariateSpline(mono + offset, scancounts[:, n], 
+            count_f = UnivariateSpline(mono + offset[n], scancounts[:, n], 
                                        s=0, k=1, ext=3)
             scancounts_new[:, n] = count_f(mono)
     else:
@@ -134,7 +134,7 @@ def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
     xdelta = []
     for n in range(y.shape[1]):
         xmax = x[np.argmax(y[:, n])]
-        spline = UnivariateSpline(x, y[:, n], ext=3)
+        spline = UnivariateSpline(x, y[:, n], ext=3, s=0)
         xdense = np.linspace(xmax-1, xmax+1, 100)
         xdelta.append(nominal - xdense[np.argmax(spline(xdense))])
     meanDelta = np.mean(xdelta)

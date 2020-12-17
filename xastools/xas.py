@@ -1,6 +1,7 @@
 import numpy as np
 from copy import copy
 from six import string_types
+from six.moves import reduce
 import matplotlib.pyplot as plt
 import datetime
 from xastools.utils import find_mono_offset, correct_mono, appendMatrices, appendArrays, appendVectors
@@ -66,7 +67,7 @@ class XAS:
         weights = self.weights.copy()
         offsets = self.offsets.copy()
         scans = self.scans.copy()
-        cols = copy(cols)
+        cols = copy(self.cols)
         return XAS(data, self.self.sample, scans, cols, offsets, weights, self.loadid, self.cmd, **self.kwargs)
 
     def getColIdx(self, cols):
@@ -117,7 +118,12 @@ class XAS:
             deltaE = self.getOffsets('MONO')
             if multiscan:
                 for n in range(y.shape[-1]):
-                    y[..., n] = correct_mono(x, deltaE[..., n], y[..., n])
+                    ytmp = y[..., n]
+                    if len(ytmp.shape) > 1:
+                        dE = np.zeros(ytmp.shape[-1]) + deltaE[..., n]
+                    else:
+                        dE = deltaE[..., n]
+                    y[..., n] = correct_mono(x, dE, ytmp)
             else:
                     y = correct_mono(x, deltaE, y)
                 
