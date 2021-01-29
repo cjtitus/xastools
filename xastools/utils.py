@@ -11,11 +11,11 @@ def at_least_2d(arr):
         return arr
     
 def appendMatrices(*args):
-    data = np.dstack(map(np.atleast_3d, args))
+    data = np.dstack(list(map(np.atleast_3d, args)))
     return data
 
 def appendArrays(*args):
-    data = np.concatenate(map(at_least_2d, args), axis=-1)
+    data = np.concatenate(list(map(at_least_2d, args)), axis=-1)
     return data
 
 def appendVectors(*args):
