@@ -55,10 +55,13 @@ Maniplator Position (XYZ): {samplex:.2f} {sampley:.2f} {samplez:.2f} {sampler:.2
 Scan: {scan}
 {c1}
 {c2}
-Weights:{weights}
-Offsets:{offsets}
+Weights:
+{weights}
+Offsets:
+{offsets}
 Data:
 {cols}
+
 '''.format(**metadata, **motors)
 
     with open(filename, 'w') as f:
@@ -67,14 +70,14 @@ Data:
 
 def makeWeightStr(weights, cols):
     if weights is not None:
-        weightStr = "".join([' %7.3f'%weights.get(c, 1) for c in cols])
+        weightStr = "".join([' %7.3f'%w for w in weights])
     else:
         weightStr = "".join([' %7.3f'%1]*len(cols))
     return weightStr
 
 def makeOffsetStr(offsets, cols):
     if offsets is not None:
-        offsetStr = "".join([' %7.3f'%offsets.get(c, 0) for c in cols])
+        offsetStr = "".join([' %7.3f'%o for o in offsets])
     else:
         offsetStr = "".join([' %7.3f'%0]*len(cols))
     return offsetStr
