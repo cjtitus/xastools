@@ -57,7 +57,7 @@ def areaNorm(x, y, start=0, end=None, offset=True):
 
     return (y - sub)/area
 
-def tailNorm(y, start=0, end=-10):
+def tailNorm(y, start=0, end=-10, startRange=10, endRange=10):
     """
     tailNorm essentially sets the pre-edge to 0, and the post-edge to 1.
     It works just like ppNorm, but for "min" uses the average of the first 10
@@ -66,10 +66,10 @@ def tailNorm(y, start=0, end=-10):
     :param y: y data (counts)
     
     """
-    ymin = np.mean(y[start:start + 10])
+    ymin = np.mean(y[start:start + startRange])
     if end < 0:
         end = len(y) + end
-    ymax = np.mean(y[end:end + 10])
+    ymax = np.mean(y[end:end + endRange])
     ynorm = (y - ymin)/(ymax - ymin)
 
     return ynorm
