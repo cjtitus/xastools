@@ -1,24 +1,12 @@
 from xastools.export.yamlExport import exportToYaml
-from xastools.export.yamlExport import exportToSSRL
-
-def inferColTypes(cols):
-    motorNames = ['Seconds', 'ENERGY_ENC', 'MONO']
-    sensorNames = ['TEMP']
-    coltypes = []
-    for c in cols:
-        if c in motorNames:
-            coltypes.append('motor')
-        elif c in sensorNames:
-            coltypes.append('sensor')
-        else:
-            coltypes.append('detector')
-    return coltypes
+from xastools.export.ssrlExport import exportToSSRL
+from xastools.export.exportTools import inferColTypes
     
 def headerFromXAS(xas):
     scaninfokeys = ['motor', 'scan', 'date', 'sample', 'loadid', 'command']
     scaninfo = {k: getattr(xas, k, None) for k in scaninfokeys}
-    scaninfo.update(xas.scaninfo)
-    motors = xas.motors
+    scaninfo.update(getattr(xas, 'scaninfo', {}))
+    motors = getattr(xas, 'motors', {})
     channelinfokeys = ['cols', 'offsets', 'weights'] #will require fixes for multiscans
     channelinfo = {k: getattr(xas, k, None) for k in channelinfokeys}
 
