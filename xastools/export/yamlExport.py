@@ -4,6 +4,10 @@ import numpy as np
 
 
 def writeHeader(filename, header):
+    def ndrep(dumper, data):
+        return dumper.represent_data([float(d) for d in data])
+    yaml.add_representer(np.ndarray, ndrep)
+    
     with open(filename, 'w') as f:
         yaml.dump(header, f, explicit_end=True)
 
@@ -35,5 +39,5 @@ def loadFromYaml(filename):
     yamlEnd = document.index("...\n") + 1
     yamlStr = "".join(document[:yamlEnd])
     header = yaml.load(yamlStr)
-    data = np.loadtxt(document[yamlEnd:])
+    data = np.loadtxt(document[yamlEnd:]).T
     return header, data
