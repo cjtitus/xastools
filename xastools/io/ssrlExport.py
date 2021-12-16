@@ -1,14 +1,16 @@
 import numpy as np
 from os.path import exists, join
 from os import mkdir
-from xastools.export.exportTools import inferColTypes
+from .exportTools import inferColTypes
 
-def exportToSSRL(folder, header, data, namefmt="{sample}_{scan}.dat", c1="", c2="", headerUpdates={}):
+
+def exportToSSRL(folder, data, header, namefmt="{sample}_{scan}.dat", c1="",
+                 c2="", headerUpdates={}, strict=False):
     """Exports to Graham's ASCII SSRL data format
 
     :param folder: Export folder (filename will be auto-generated)
+    :param data: Numpy array with data of dimensions (npts, ncols)
     :param header: Dictionary with 'scaninfo', 'motors', 'channelinfo' sub-dictionaries
-    :param data: Numpy array with data
     :param namefmt: Python format string that will be filled with info from 'scaninfo' dictionary
     :param c1: Comment string 1
     :param c2: Comment string 2
@@ -17,13 +19,17 @@ def exportToSSRL(folder, header, data, namefmt="{sample}_{scan}.dat", c1="", c2=
     :rtype: 
 
     """
-    
-    filename = join(folder, namefmt.format(**header['scaninfo']))
 
+    filename = join(folder, namefmt.format(**header['scaninfo']))
 
     metadata = {}
     metadata.update(header['scaninfo'])
     metadata.update(headerUpdates)
+    if strict:
+        # Scan can't be list, just pick first value
+        if isinstance(metadata['scan'], (list, tuple)):
+            metadata['scan'] = metadata['scan'][0]
+
     motors = header['motors']
     channelinfo = header['channelinfo']
     cols = channelinfo.get('cols')
@@ -33,14 +39,14 @@ def exportToSSRL(folder, header, data, namefmt="{sample}_{scan}.dat", c1="", c2=
     offsetStr = makeOffsetStr(offsets, cols)
     colStr = "\n".join(cols)
 
-    metadata['npts'] = data.shape[1]
-    metadata['ncols'] = data.shape[0]
+    metadata['npts'] = data.shape[0]
+    metadata['ncols'] = data.shape[1]
     metadata['cols'] = colStr
     metadata['weights'] = weightStr
     metadata['offsets'] = offsetStr
     metadata['c1'] = c1
     metadata['c2'] = c2
-    
+
     headerstring = '''SSRL                                  
 {date}
 PTS:{npts:11d} COLS: {ncols:11d}
@@ -66,25 +72,30 @@ Data:
 
     with open(filename, 'w') as f:
         f.write(headerstring)
-        np.savetxt(f, data.T, fmt=' %14.3f')
+        np.savetxt(f, data, fmt=' %8g')
+
 
 def makeWeightStr(weights, cols):
     if weights is not None:
-        weightStr = "".join([' %7.3f'%w for w in weights])
+        weightlist = [(weights[k] if k in weights else 1) for k in cols]
+        weightStr = "".join([' %7g' % w for w in weightlist])
     else:
-        weightStr = "".join([' %7.3f'%1]*len(cols))
+        weightStr = "".join([' %7g' % 1]*len(cols))
     return weightStr
+
 
 def makeOffsetStr(offsets, cols):
     if offsets is not None:
-        offsetStr = "".join([' %7.3f'%o for o in offsets])
+        offsetlist = [(offsets[k] if k in offsets else 0) for k in cols]
+        offsetStr = "".join([' %7e' % o for o in offsetlist])
     else:
-        offsetStr = "".join([' %7.3f'%0]*len(cols))
+        offsetStr = "".join([' %7e' % 0]*len(cols))
     return offsetStr
+
 
 def parseChannelLine(line, ncols, default, name='Channel Line'):
     values = line.split()
-    
+
     if len(values) != ncols:
         print("{} has len {}, expected {}".format(name, len(values), ncols))
         print(values)
@@ -95,28 +106,37 @@ def parseChannelLine(line, ncols, default, name='Channel Line'):
         except:
             values = np.array([default]*ncols)
     return values
-    
-def parseWeights(line, ncols):
+
+
+def parseWeights(line, cols):
     """
 
-    :param line: Either a weight
-    :returns: 
-    :rtype: 
+    :param line: Weight line
+    :param cols: List of column names
+    :returns: Dictionary of column name: weight values
+    :rtype: dict
 
     """
-    weights = parseChannelLine(line, ncols, 1.0, name='Weights')
+    ncols = len(cols)
+    w = parseChannelLine(line, ncols, 1.0, name='Weights')
+    weights = {k: v for k, v in zip(cols, w)}
     return weights
 
-def parseOffsets(line, ncols):
+
+def parseOffsets(line, cols):
     """
 
-    :param line: Either a weight
-    :returns: 
-    :rtype: 
+    :param line: Offset line
+    :param cols: List of column names
+    :returns: Dictionary of column name: weight values
+    :rtype: dict
 
     """
-    offsets = parseChannelLine(line, ncols, 0.0, name='Offsets')
+    ncols = len(cols)
+    o = parseChannelLine(line, ncols, 0.0, name='Offsets')
+    offsets = {k: v for k, v in zip(cols, o)}
     return offsets
+
 
 def loadFromSSRL(filename):
     """
@@ -129,7 +149,8 @@ def loadFromSSRL(filename):
         fmtline = f.readline().split()
         npts = int(fmtline[1])
         ncols = int(fmtline[3])
-        for n in range(4): f.readline()
+        for n in range(4):
+            f.readline()
         sampleline = f.readline().split()
         sample = sampleline[1]
         loadid = sampleline[3]
@@ -141,14 +162,15 @@ def loadFromSSRL(filename):
             scan = scanline[1]
         except:
             scan = None
-        for n in range(2): f.readline()
+        for n in range(2):
+            f.readline()
         f.readline()
         weightline = f.readline()
         f.readline()
         offsetline = f.readline()
         f.readline()
         cols = [f.readline().rstrip('\n') for n in range(ncols)]
-    data = np.loadtxt(filename, skiprows=(20+ncols)).T
+    data = np.loadtxt(filename, skiprows=(20+ncols))
     header = {}
     scaninfo = {}
     scaninfo['date'] = dateline.rstrip('\n')
@@ -160,8 +182,8 @@ def loadFromSSRL(filename):
     channelinfo = {}
     channelinfo['cols'] = cols
     channelinfo['coltypes'] = inferColTypes(cols)
-    channelinfo['weights'] = parseWeights(weightline, ncols)
-    channelinfo['offsets'] = parseOffsets(offsetline, ncols)
+    channelinfo['weights'] = parseWeights(weightline, cols)
+    channelinfo['offsets'] = parseOffsets(offsetline, cols)
     motors = {}
     try:
         motors['entnslt'] = float(slitline.split()[1])
@@ -181,4 +203,4 @@ def loadFromSSRL(filename):
     header['motors'] = motors
     header['channelinfo'] = channelinfo
 
-    return header, data
+    return data, header

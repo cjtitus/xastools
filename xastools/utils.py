@@ -2,25 +2,31 @@ import numpy as np
 from scipy.interpolate import UnivariateSpline
 from scipy.signal import savgol_filter, argrelmax
 
-refEdges = {'o': 527, 'mn':638, 'fe':706.9, 'co':779.1, 'ni':852.7}
+
+refEdges = {'o': 527, 'mn': 638, 'fe': 706.9, 'co': 779.1, 'ni': 852.7}
+
 
 def at_least_2d(arr):
     if len(arr.shape) < 2:
         return arr[:, np.newaxis]
     else:
         return arr
-    
+
+
 def appendMatrices(*args):
     data = np.dstack(list(map(np.atleast_3d, args)))
     return data
+
 
 def appendArrays(*args):
     data = np.concatenate(list(map(at_least_2d, args)), axis=-1)
     return data
 
+
 def appendVectors(*args):
     data = np.hstack(args)
     return data
+
 
 def ppNorm(y):
     """
@@ -38,6 +44,7 @@ def ppNorm(y):
     ynorm = (y - ymin)/(ymax - ymin)
 
     return ynorm
+
 
 def areaNorm(x, y, start=0, end=None, offset=True):
     """
@@ -57,6 +64,7 @@ def areaNorm(x, y, start=0, end=None, offset=True):
 
     return (y - sub)/area
 
+
 def tailNorm(y, start=0, end=-10, startRange=10, endRange=10):
     """
     tailNorm essentially sets the pre-edge to 0, and the post-edge to 1.
@@ -73,7 +81,8 @@ def tailNorm(y, start=0, end=-10, startRange=10, endRange=10):
     ynorm = (y - ymin)/(ymax - ymin)
 
     return ynorm
-    
+
+
 def normalize(x, y, normType):
     """Dispatch function for other normalization functions
 
@@ -93,11 +102,15 @@ def normalize(x, y, normType):
     else:
         return y
 
+
 def correct_mono(mono, offset, scancounts):
+    """
+    Takes one mono, one offset
+    """
     scancounts_new = np.zeros_like(scancounts)
     if len(scancounts.shape) == 2:
         for n in range(scancounts.shape[1]):
-            count_f = UnivariateSpline(mono + offset[n], scancounts[:, n], 
+            count_f = UnivariateSpline(mono + offset, scancounts[:, n],
                                        s=0, k=1, ext=3)
             scancounts_new[:, n] = count_f(mono)
     else:
@@ -105,6 +118,7 @@ def correct_mono(mono, offset, scancounts):
                                    s=0, k=1, ext=3)
         scancounts_new = count_f(mono)
     return scancounts_new
+
 
 def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
     """
@@ -143,4 +157,3 @@ def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
     if np.abs(meanDelta) > 0.5:
         print("High mean delta, check alignment")
     return np.array(xdelta)
-

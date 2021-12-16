@@ -1,100 +1,89 @@
 import numpy as np
-from copy import copy
+import xarray as xr
 from six import string_types
-from six.moves import reduce
 import matplotlib.pyplot as plt
-import datetime
-from xastools.utils import find_mono_offset, correct_mono, appendMatrices, appendArrays, appendVectors
-from xastools.read import writeSSRL, readSSRL
-
-def file2spectrum(filename):
-    data, header = readSSRL(filename)
-    return XAS(data, **header)
-
-def files2spectrum(filenames):
-    spectra = [file2spectrum(filename) for filename in filenames]
-    spectra.sort(key=lambda x: x.scans)
-    return reduce(lambda x, y: x + y, spectra)
+from xastools.utils import (find_mono_offset, correct_mono)
 
 
 class XAS:
-    def __init__(self, data, sample=None, scan=None, cols=None, offsets=None, weights=None, loadid=None, cmd=None, **kwargs):
+    scaninfokeys = ['motor', 'scan', 'date', 'sample', 'loadid', 'command']
+
+    def __init__(self, data, scaninfo={}, motors={}, channelinfo={}):
+        for k in self.scaninfokeys:
+            setattr(self, k, scaninfo.get(k, None))
         self.bintype = 'XAS'
-        self.sample = sample
-        if scan is not None:
-            self.scans = np.array(scan, dtype=np.int)
-        else:
-            self.scans = np.array(-1)
-        self.loadid = loadid
-        self.cmd = cmd
-        self.data = np.array(data)
-        self.cols = cols
-        self.offsets = np.array(offsets, dtype=np.float)
-        self.weights = np.array(weights, dtype=np.float)
-        self.kwargs = kwargs
+        self.data = data
+        self.motors = motors
+        self.scaninfo = {}
+        for k in scaninfo:
+            if k not in self.scaninfokeys:
+                self.scaninfo[k] = scaninfo[k]
+        self.channelinfo = channelinfo
+
+    def __eq__(self, y):
+        for k in self.scaninfokeys:
+            if not np.all(getattr(self, k, None) == getattr(y, k, None)):
+                return False
+        if not np.all(self.data == y.data):
+            return False
+        return True
+
+    def getHeader(self):
+        scaninfo = {k: getattr(self, k, None) for k in self.scaninfokeys}
+        scaninfo.update(getattr(self, 'scaninfo', {}))
+        motors = getattr(self, 'motors', {})
+        header = {'scaninfo': scaninfo, 'motors': motors, 'channelinfo': self.channelinfo}
+        return header
 
     def __add__(self, y):
-        if y == None:
+        if y is None:
             return self.copy()
         if y.bintype != self.bintype:
-            raise TypeError("Cannot add %s to %s"%(y.bintype, self.bintype))
-        data = appendMatrices(self.data, y.data)
-        weights = appendArrays(self.weights, y.weights)
-        offsets = appendArrays(self.offsets, y.offsets)
-        scans = appendVectors(self.scans, y.scans)
-        return XAS(data, self.sample, scans, self.cols, offsets, weights, self.loadid, self.cmd, **self.kwargs)
+            raise TypeError("Cannot add %s to %s" % (y.bintype, self.bintype))
+        header = self.getHeader()
+        data = xr.concat([self.data, y.data], "scan")
+        return XAS(data, **header)
 
     def __iadd__(self, y):
-        if y == None:
+        if y is None:
             return self
         if y.bintype != self.bintype:
-            raise TypeError("Cannot add %s to %s"%(y.bintype, self.bintype))
-        self.data = appendMatrices(self.data, y.data)
-        self.weights = appendArrays(self.weights, y.weights)
-        self.offsets = appendArrays(self.offsets, y.offsets)
-        self.scans = appendVectors(self.scans, y.scans)
+            raise TypeError("Cannot add %s to %s" % (y.bintype, self.bintype))
+        self.data = xr.concat([self.data, y.data], "scan")
         return self
 
+    """ 
     def __getitem__(self, key):
         if key not in self.cols:
             raise KeyError
         else:
             idx = self.cols.index(key)
             return np.squeeze(self.data[:, idx, ...].copy())
-        
+    """
+
     def copy(self):
         data = self.data.copy()
-        weights = self.weights.copy()
-        offsets = self.offsets.copy()
-        scans = self.scans.copy()
-        cols = copy(self.cols)
-        return XAS(data, self.self.sample, scans, cols, offsets, weights, self.loadid, self.cmd, **self.kwargs)
+        header = self.getHeader()
+        return XAS(data, **header)
 
-    def getColIdx(self, cols):
-        if not isinstance(cols, string_types):
-            idx = [self.cols.index(c) for c in cols]
-        else:
-            idx = [self.cols.index(cols)]
-        return idx
-    
     def getWeights(self, cols):
-        idx = self.getColIdx(cols)
-        weights = self.weights[idx]
-        return weights
-        
+        weights = self.data.weights.sel(ch=cols).copy()
+        return weights.fillna(1)
+
     def getOffsets(self, cols):
-        idx = self.getColIdx(cols)
-        offsets = self.offsets[idx]
-        return offsets
+        offsets = self.data.offsets.sel(ch=cols).copy()
+        return offsets.fillna(0)
 
     def getCols(self, cols):
         """
         Returns a copy of the data object with the chosen columns
         """
-        idx = self.getColIdx(cols)
-        return self.data[:, idx, ...].copy()
-    
-    def getData(self, cols, divisor=None, xcol='MONO', individual=False, offset=False, offsetMono=False, return_x = True, weight=False, squeeze=True):
+
+        return self.data.data.sel(ch=cols).copy()
+
+    def getData(self, cols, divisor=None, xcol='MONO', individual=False,
+                offset=False, offsetMono=False, return_x=True,
+                weight=False, squeeze=True):
         """FIXME! briefly describe function
 
         :param cols: 
@@ -105,44 +94,43 @@ class XAS:
         :rtype: 
 
         """
-        x = self[xcol]
-        if len(x.shape) == 2:
+        x = self.getCols(xcol)
+        if len(x.scan) > 1:
             multiscan = True
-            x = x[:, 0]
+            x = x.isel(scan=0).squeeze()
         else:
             multiscan = False
-            
+
         y = self.getCols(cols)
+
+        if offset:
+            o = self.getOffsets(cols)
+            y -= o
+        if weight:
+            w = self.getWeights(cols)
+            y /= w
+        if divisor is not None:
+            # wtf was this doing??
+            # div = np.cumprod(self.getCols(divisor), axis=1)[:, [-1], ...]
+            div = self.getCols(divisor)
+            y /= div
 
         if offsetMono:
             deltaE = self.getOffsets('MONO')
             if multiscan:
-                for n in range(y.shape[-1]):
-                    ytmp = y[..., n]
-                    if len(ytmp.shape) > 1:
-                        dE = np.zeros(ytmp.shape[-1]) + deltaE[..., n]
-                    else:
-                        dE = deltaE[..., n]
-                    y[..., n] = correct_mono(x, dE, ytmp)
+                for n in range(len(y.scan)):
+                    ytmp = y[{"scan": n}]
+                    dE = deltaE[{"scan": n}]
+                    y[{"scan": n}] = correct_mono(x, dE, ytmp)
             else:
-                    y = correct_mono(x, deltaE, y)
-                
-        if offset:
-            o = self.getOffsets(cols)
-            y -= o[np.newaxis, ...]
-        if weight:
-            w = self.getWeights(cols)
-            y /= w[np.newaxis, ...]
-        if divisor is not None:
-            div = np.cumprod(self.getCols(divisor), axis=1)[:, [-1], ...]
-            y /= div
-        
-        if not individual and self.scans.size > 1:
-            y = np.sum(y, axis=-1)
+                y[:] = correct_mono(x, deltaE, y)
+
+        if not individual:
+            y = y.sum(dim='scan')
 
         if squeeze:
-            y = np.squeeze(y)
-            
+            y = y.squeeze()
+
         if return_x:
             return x, y
         else:
@@ -163,9 +151,8 @@ class XAS:
         
         x, data = self.getData(col, individual=individual, **kwargs)
         if individual:
-            scans = self.scans
-            for n in range(data.shape[-1]):
-                if n%nstack==0:
+            for n, s in enumerate(data.scan.data):
+                if n % nstack == 0:
                     if n != 0:
                         plt.legend()
                     else:
@@ -175,46 +162,15 @@ class XAS:
                     ax = fig.add_subplot(111)
                     figlist.append(fig)
                     axlist.append(ax)
-                ax.plot(x, data[..., n], label=scans[n])
+                ax.plot(x, data.sel(scan=s), label=f"Scan {s}")
             ax.legend()
             return figlist, axlist
         else:
             fig = plt.figure()
             ax = fig.add_subplot(111)
             ax.plot(x, data, label=col)
-            ax.legend()        
+            ax.legend()
         return fig, ax
-    
-    def writeSSRL(self, filename, date=None, sample=None, loadid=None, cmd=None, slits=None, manip=None, norm='I0', offsetMono=False):
-        if self.scans.size > 1:
-            scan = int(self.scans[0])
-            weights = self.weights[:, 0]
-            offsets = self.offsets[:, 0]
-        else:
-            scan = int(self.scans)
-            weights = self.weights
-            offsets = self.offsets
-        if sample is None:
-            sample = self.sample
-        if loadid is None:
-            loadid = self.loadid
-        if cmd is None:
-            cmd = self.cmd
-        if slits is None:
-            slits = self.kwargs.get('slits', None)
-        cols = self.cols
-        if norm is not None:
-            i0 = self[norm]
-            data = self.data.copy()
-            data[:, 3:, ...] = self.getData(self.cols[3:], offsetMono=offsetMono, return_x=False, individual=True)/i0[:, np.newaxis, ...]
-            data[:, self.getColIdx(norm), ...] = i0[:, np.newaxis, ...]
-        if len(data.shape) > 2:
-            data = np.mean(data, axis=-1)
-        if offsetMono:
-            c1 = "Mono corrected"
-        else:
-            c1 = ""
-        writeSSRL(filename, cols, data, date, sample, loadid, cmd, scan, slits, weights=weights, offsets=None, c1=c1)
 
     def setMonoOffset(self, deltaE):
         mono_idx = self.getColIdx('MONO')
@@ -223,7 +179,7 @@ class XAS:
                 self.offsets[mono_idx, n] = E
         else:
             self.offsets[mono_idx] = deltaE
-    
+
     def findMonoOffset(self, edge, col='REF', width=5):
         x = self['MONO']
         y = self[col]
@@ -231,7 +187,8 @@ class XAS:
         self.setMonoOffset(deltaE)
 
     def checkMonoOffset(self, col='REF', nstack=14, vline=None):
-        figlist, axlist = self.plot(col, individual=True, offsetMono=True, nstack=nstack)
+        figlist, axlist = self.plot(col, individual=True, offsetMono=True,
+                                    nstack=nstack)
         if vline:
             for ax in axlist:
                 ax.axvline(vline)
