@@ -32,5 +32,9 @@ def convertDataHeader(data, header):
     weight_data = np.array([weights[k] for k in weight_cols])
     w = xr.DataArray(weight_data, dims=["ch"], coords=[weight_cols])
     d = xr.Dataset({"data": x, "offsets": o, "weights": w})
-    d = d.expand_dims({"scan": [scan]})
+
+    if isinstance(scan, int):
+        d = d.expand_dims({"scan": [scan]})
+    else:
+        d = d.expand_dims({"scan": [scan[0]]})
     return d, header

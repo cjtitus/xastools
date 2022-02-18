@@ -3,10 +3,20 @@ import xarray as xr
 from six import string_types
 import matplotlib.pyplot as plt
 from xastools.utils import (find_mono_offset, correct_mono)
+from .io.exportTools import convertDataHeader
 
 
 class XAS:
     scaninfokeys = ['motor', 'scan', 'date', 'sample', 'loadid', 'command']
+
+    @classmethod
+    def from_data_header(cls, data, header):
+        """
+        Create an XAS object from a 2-d numpy array and a dictionary
+        that contains "scaninfo", "channelinfo", and "motors" sub-dictionaries
+        """
+        arr, h = convertDataHeader(data, header)
+        return cls(arr, **h)
 
     def __init__(self, data, scaninfo={}, motors={}, channelinfo={}):
         for k in self.scaninfokeys:
@@ -97,9 +107,9 @@ class XAS:
         x = self.getCols(xcol)
         if len(x.scan) > 1:
             multiscan = True
-            x = x.isel(scan=0).squeeze()
         else:
             multiscan = False
+        x = x.isel(scan=0).squeeze()
 
         y = self.getCols(cols)
 
@@ -144,11 +154,11 @@ class XAS:
         :param nstack: 
         :param offsetMono:
         :param offset:
-        :returns: 
+        :returns: figure, axis (or list of figures and axes)
         :rtype: 
 
         """
-        
+
         x, data = self.getData(col, individual=individual, **kwargs)
         if individual:
             for n, s in enumerate(data.scan.data):

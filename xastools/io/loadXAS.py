@@ -11,8 +11,7 @@ def loadOne(filename):
         data, header = loadFromYaml(filename)
     elif ext == "dat":
         data, header = loadFromSSRL(filename)
-    arr, h = convertDataHeader(data, header)
-    return XAS(arr, **h)
+    return XAS.from_data_header(data, header)
 
 
 def loadMany(filenames):

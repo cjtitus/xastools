@@ -12,5 +12,6 @@ setup(name="xastools",
       author="Charles Titus",
       platforms=["any"],
       scripts=scripts,
-      packages=find_packages()
-)
+      packages=find_packages(),
+      entry_points={'tiled.special_client':
+                    ['nistxas = xastools.io.tiledClient:XASClient']})
