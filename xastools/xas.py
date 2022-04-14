@@ -146,7 +146,7 @@ class XAS:
         else:
             return y
 
-    def plot(self, col, individual=False, nstack=7, **kwargs):
+    def plot(self, col, individual=False, nstack=7, ax=None, label=None, **kwargs):
         """See getData for all kwargs
 
         :param col: 
@@ -176,9 +176,14 @@ class XAS:
             ax.legend()
             return figlist, axlist
         else:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            ax.plot(x, data, label=col)
+            if ax is None:
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+            else:
+                fig = ax.get_figure()
+            if label is None:
+                label = col
+            ax.plot(x, data, label=label)
             ax.legend()
         return fig, ax
 
