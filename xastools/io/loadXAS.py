@@ -11,6 +11,8 @@ def loadOne(filename):
         data, header = loadFromYaml(filename)
     elif ext == "dat":
         data, header = loadFromSSRL(filename)
+    else:
+        raise ValueError("File extension not recognized")
     return XAS.from_data_header(data, header)
 
 
