@@ -123,8 +123,8 @@ def correct_mono(mono, offset, scancounts):
 def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
     """
     Default alignment method for data that has a good peak
-    xlist.shape = (npts, nscans)
-    ylist.shape = (npts, nscans)
+    xlist.shape = (nscans, npts)
+    ylist.shape = (nscans, npts)
     """
     if edge in refEdges:
         nominal = refEdges[edge]
@@ -134,21 +134,21 @@ def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
         except:
             print("Could not understand edge ")
     if len(xlist.shape) > 1:
-        xlist = xlist[:, 0]
+        xlist = xlist[0, :]
     if len(ylist.shape) == 1:
-        ylist = np.expand_dims(ylist, axis=1)
+        ylist = np.expand_dims(ylist, axis=0)
     xidx = (xlist > (nominal - width)) & (xlist < (nominal + width))
     x = xlist[xidx]
 
     if smooth:
         ysmooth = savgol_filter(ylist, 15, 2, axis=0)
-        y = ysmooth[xidx, :]
+        y = ysmooth[:, xidx]
     else:
-        y = ylist[xidx, :]
+        y = ylist[:, xidx]
     xdelta = []
-    for n in range(y.shape[1]):
-        xmax = x[np.argmax(y[:, n])]
-        spline = UnivariateSpline(x, y[:, n], ext=3, s=0)
+    for n in range(y.shape[0]):
+        xmax = x[np.argmax(y[n, :])]
+        spline = UnivariateSpline(x, y[n, :], ext=3, s=0)
         xdense = np.linspace(xmax-1, xmax+1, 100)
         xdelta.append(nominal - xdense[np.argmax(spline(xdense))])
     meanDelta = np.mean(xdelta)

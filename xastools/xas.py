@@ -22,7 +22,7 @@ class XAS:
         for k in self.scaninfokeys:
             setattr(self, k, scaninfo.get(k, None))
         self.bintype = 'XAS'
-        self.data = data
+        self.data = data.copy(deep=True)
         self.motors = motors
         self.scaninfo = {}
         for k in scaninfo:
@@ -105,12 +105,6 @@ class XAS:
 
         """
         x = self.getCols(xcol)
-        if len(x.scan) > 1:
-            multiscan = True
-        else:
-            multiscan = False
-        x = x.isel(scan=0).squeeze()
-
         y = self.getCols(cols)
 
         if offset:
@@ -127,18 +121,18 @@ class XAS:
 
         if offsetMono:
             deltaE = self.getOffsets('MONO')
-            if multiscan:
-                for n in range(len(y.scan)):
-                    ytmp = y[{"scan": n}]
-                    dE = deltaE[{"scan": n}]
-                    y[{"scan": n}] = correct_mono(x, dE, ytmp)
-            else:
-                y[:] = correct_mono(x, deltaE, y)
+            for n in range(len(y.scan)):
+                ytmp = y[{"scan": n}]
+                dE = deltaE[{"scan": n}]
+                xtmp = x[{"scan": n}]
+                y[{"scan": n}] = correct_mono(xtmp, dE, ytmp)
 
         if not individual:
+            x = x.mean(dim='scan')
             y = y.sum(dim='scan')
 
         if squeeze:
+            x = x.squeeze()
             y = y.squeeze()
 
         if return_x:
@@ -172,7 +166,7 @@ class XAS:
                     ax = fig.add_subplot(111)
                     figlist.append(fig)
                     axlist.append(ax)
-                ax.plot(x, data.sel(scan=s), label=f"Scan {s}")
+                ax.plot(x.sel(scan=s), data.sel(scan=s), label=f"Scan {s}")
             ax.legend()
             return figlist, axlist
         else:
@@ -183,18 +177,19 @@ class XAS:
         return fig, ax
 
     def setMonoOffset(self, deltaE):
-        mono_idx = self.getColIdx('MONO')
-        if len(self.offsets.shape) == 2:
-            for n, E in enumerate(deltaE):
-                self.offsets[mono_idx, n] = E
-        else:
-            self.offsets[mono_idx] = deltaE
+        self.data['offsets'].loc[dict(ch="MONO")] = deltaE
 
-    def findMonoOffset(self, edge, col='REF', width=5):
-        x = self['MONO']
-        y = self[col]
-        deltaE = find_mono_offset(x, y, edge, width)
+    def findMonoOffset(self, edge, col='REF', width=5, **kwargs):
+        """
+        edge : String or number, passed to find_mono_offset
+        col : Column to use for alignment
+        width : width of alignment window
+        **kwargs : passed to getData
+        """
+        x, y = self.getData(col, individual=True, **kwargs)
+        deltaE = find_mono_offset(x.data, y.data, edge, width)
         self.setMonoOffset(deltaE)
+        return deltaE
 
     def checkMonoOffset(self, col='REF', nstack=14, vline=None):
         figlist, axlist = self.plot(col, individual=True, offsetMono=True,
