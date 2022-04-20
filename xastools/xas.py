@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 from six import string_types
 import matplotlib.pyplot as plt
-from xastools.utils import (find_mono_offset, correct_mono)
+from xastools.utils import (find_mono_offset, correct_mono, normalize)
 from .io.exportTools import convertDataHeader
 
 
@@ -140,7 +140,8 @@ class XAS:
         else:
             return y
 
-    def plot(self, col, individual=False, nstack=7, ax=None, label=None, **kwargs):
+    def plot(self, col, individual=False, nstack=7, ax=None, label=None,
+             normType=None, **kwargs):
         """See getData for all kwargs
 
         :param col: 
@@ -166,7 +167,9 @@ class XAS:
                     ax = fig.add_subplot(111)
                     figlist.append(fig)
                     axlist.append(ax)
-                ax.plot(x.sel(scan=s), data.sel(scan=s), label=f"Scan {s}")
+                xsel = x.sel(scan=s).data
+                ysel = data.sel(scan=s).data
+                ax.plot(xsel, normalize(xsel, ysel, normType), label=f"Scan {s}")
             ax.legend()
             return figlist, axlist
         else:
@@ -177,14 +180,16 @@ class XAS:
                 fig = ax.get_figure()
             if label is None:
                 label = col
-            ax.plot(x, data, label=label)
+            x = x.data
+            data = data.data
+            ax.plot(x, normalize(x, data, normType), label=label)
             ax.legend()
         return fig, ax
 
     def setMonoOffset(self, deltaE):
         self.data['offsets'].loc[dict(ch="MONO")] = deltaE
 
-    def findMonoOffset(self, edge, col='REF', width=5, **kwargs):
+    def findMonoOffset(self, edge, col='REF', width=5, smooth=False, **kwargs):
         """
         edge : String or number, passed to find_mono_offset
         col : Column to use for alignment
@@ -192,7 +197,7 @@ class XAS:
         **kwargs : passed to getData
         """
         x, y = self.getData(col, individual=True, **kwargs)
-        deltaE = find_mono_offset(x.data, y.data, edge, width)
+        deltaE = find_mono_offset(x.data, y.data, edge, width, smooth)
         self.setMonoOffset(deltaE)
         return deltaE
 

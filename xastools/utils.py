@@ -86,10 +86,10 @@ def tailNorm(y, start=0, end=-10, startRange=10, endRange=10):
 def normalize(x, y, normType):
     """Dispatch function for other normalization functions
 
-    :param x: 
-    :param y: 
-    :param normType: 
-    :returns: 
+    :param x: x data (always required for consistent api)
+    :param y: y data 
+    :param normType: one of ['pp', 'area', 'tail']
+    :returns: normalized y
     :rtype: 
 
     """
@@ -141,7 +141,7 @@ def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
     x = xlist[xidx]
 
     if smooth:
-        ysmooth = savgol_filter(ylist, 15, 2, axis=0)
+        ysmooth = savgol_filter(ylist, 15, 2, axis=1)
         y = ysmooth[:, xidx]
     else:
         y = ylist[:, xidx]
