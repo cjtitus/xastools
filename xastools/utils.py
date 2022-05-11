@@ -120,6 +120,32 @@ def correct_mono(mono, offset, scancounts):
     return scancounts_new
 
 
+def find_y_peak(xlist, ylist, center, width=5, smooth=False):
+    """
+    Find the position of a relative maximum in the y-data, given a
+    window centered on center, of width width
+    """
+    if len(xlist.shape) > 1:
+        xlist = xlist[0, :]
+    if len(ylist.shape) == 1:
+        ylist = np.expand_dims(ylist, axis=0)
+    xidx = (xlist > (center - width)) & (xlist < (center + width))
+    x = xlist[xidx]
+
+    if smooth:
+        ysmooth = savgol_filter(ylist, 15, 2, axis=1)
+        y = ysmooth[:, xidx]
+    else:
+        y = ylist[:, xidx]
+    xloc = []
+    for n in range(y.shape[0]):
+        xmax = x[np.argmax(y[n, :])]
+        spline = UnivariateSpline(x, y[n, :], ext=3, s=0)
+        xdense = np.linspace(xmax-1, xmax+1, 100)
+        xloc.append(xdense[np.argmax(spline(xdense))])
+    return xloc
+
+
 def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
     """
     Default alignment method for data that has a good peak
@@ -133,24 +159,8 @@ def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
             nominal = float(edge)
         except:
             print("Could not understand edge ")
-    if len(xlist.shape) > 1:
-        xlist = xlist[0, :]
-    if len(ylist.shape) == 1:
-        ylist = np.expand_dims(ylist, axis=0)
-    xidx = (xlist > (nominal - width)) & (xlist < (nominal + width))
-    x = xlist[xidx]
-
-    if smooth:
-        ysmooth = savgol_filter(ylist, 15, 2, axis=1)
-        y = ysmooth[:, xidx]
-    else:
-        y = ylist[:, xidx]
-    xdelta = []
-    for n in range(y.shape[0]):
-        xmax = x[np.argmax(y[n, :])]
-        spline = UnivariateSpline(x, y[n, :], ext=3, s=0)
-        xdense = np.linspace(xmax-1, xmax+1, 100)
-        xdelta.append(nominal - xdense[np.argmax(spline(xdense))])
+    xloc = find_y_peak(xlist, ylist, nominal, width, smooth)
+    xdelta = nominal - np.array(xloc)
     meanDelta = np.mean(xdelta)
     if np.std(xdelta) > 0.3:
         print("High standard dev on alignment")
