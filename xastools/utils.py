@@ -4,6 +4,21 @@ from scipy.signal import savgol_filter, argrelmax
 
 
 refEdges = {'o': 527, 'mn': 638, 'fe': 706.9, 'co': 779.1, 'ni': 852.7}
+roiMaster = {'felab': [680, 850], 'fell': [580, 640], 'ok': [490, 540],
+             'full': [150, 1400], 'tfy': [150, 1400], 'nk': [360, 420],
+             'ck': [230, 310], 'fk': [630, 690], 'bk': [150, 220],
+             'tilab': [413, 470],
+             'till': [360, 413], 'vlab': [490, 520], 'mnlab': [590, 660],
+             'mnll': [540, 590], 'nilab': [800, 880], 'nill': [700, 780],
+             'culab': [880, 960], 'cull': [760, 840], 'colab': [720, 800],
+             'coll': [640, 700], "znlab": [970, 1060], "znll": [840, 920],
+             'transfer': [-20, 100]}
+roiDefaults = {'b': ['bk'], 'c': ['ck'], 'n': ['nk'], 'ti': ['tilab', 'till'],
+               'v': ['vlab'], 'o': ['ok'], 'mn': ['mnlab', 'mnll'],
+               'f': ['fk'],
+               'fe': ['felab', 'fell'], 'co': ['colab', 'coll'],
+               'ni': ['nilab', 'nill'], 'cu': ['culab', 'cull'],
+               'zn': ['znlab', 'znll']}
 
 
 def at_least_2d(arr):
