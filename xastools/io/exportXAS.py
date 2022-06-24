@@ -7,7 +7,10 @@ from ..xas import inferColTypes
 def headerFromXAS(xas, data=None):
     scaninfokeys = ['motor', 'date', 'sample', 'loadid', 'command']
     scaninfo = {k: getattr(xas, k, None) for k in scaninfokeys}
-    scaninfo['scan'] = sorted(xas.data.scan.values.tolist())
+    scan = sorted(xas.data.scan.values.tolist())
+    if len(scan) == 1:
+        scan = scan[0]
+    scaninfo['scan'] = scan 
     scaninfo.update(getattr(xas, 'scaninfo', {}))
     motors = getattr(xas, 'motors', {})
     channelinfokeys = ['cols']  # will require fixes for multiscans

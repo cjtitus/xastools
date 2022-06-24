@@ -5,7 +5,7 @@ from ..xas import inferColTypes
 
 
 def exportToSSRL(folder, data, header, namefmt="{sample}_{scan}.dat", c1="",
-                 c2="", headerUpdates={}, strict=False):
+                 c2="", headerUpdates={}, strict=False, verbose=True):
     """Exports to Graham's ASCII SSRL data format
 
     :param folder: Export folder (filename will be auto-generated)
@@ -21,7 +21,8 @@ def exportToSSRL(folder, data, header, namefmt="{sample}_{scan}.dat", c1="",
     """
 
     filename = join(folder, namefmt.format(**header['scaninfo']))
-
+    if verbose:
+        print(f"Exporting to {filename}")
     metadata = {}
     metadata.update(header['scaninfo'])
     metadata.update(headerUpdates)

@@ -41,7 +41,7 @@ def convertDataHeader(data, header):
     return d, header
 
 class XAS:
-    scaninfokeys = ['motor', 'scan', 'date', 'sample', 'loadid', 'command']
+    scaninfokeys = ['motor', 'date', 'sample', 'loadid', 'command']
 
     @classmethod
     def from_data_header(cls, data, header):
