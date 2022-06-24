@@ -4,6 +4,19 @@ from six import string_types
 import matplotlib.pyplot as plt
 from xastools.utils import (find_mono_offset, correct_mono, normalize)
 
+def inferColTypes(cols):
+    motorNames = ['Seconds', 'ENERGY_ENC', 'MONO']
+    sensorNames = ['TEMP']
+    coltypes = []
+    for c in cols:
+        if c in motorNames:
+            coltypes.append('motor')
+        elif c in sensorNames:
+            coltypes.append('sensor')
+        else:
+            coltypes.append('detector')
+    return coltypes
+
 def convertDataHeader(data, header):
     scan = header['scaninfo'].pop('scan', None)
     cols = header['channelinfo']['cols']
@@ -40,6 +53,9 @@ class XAS:
         return cls(arr, **h)
 
     def __init__(self, data, scaninfo={}, motors={}, channelinfo={}):
+        """Create an XAS object directly from a properly formatted xarray, 
+        and three metadata dictionaries
+        """
         for k in self.scaninfokeys:
             setattr(self, k, scaninfo.get(k, None))
         self.bintype = 'XAS'
@@ -58,6 +74,10 @@ class XAS:
         if not np.all(self.data == y.data):
             return False
         return True
+
+    @property
+    def columns(self):
+        return tuple(self.channelinfo['cols'])
 
     def getHeader(self):
         scaninfo = {k: getattr(self, k, None) for k in self.scaninfokeys}

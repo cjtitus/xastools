@@ -1,7 +1,7 @@
 import numpy as np
 from .yamlExport import exportToYaml
 from .ssrlExport import exportToSSRL
-from .exportTools import inferColTypes
+from ..xas import inferColTypes
 
 
 def headerFromXAS(xas, data=None):
