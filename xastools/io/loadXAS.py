@@ -2,7 +2,6 @@ from functools import reduce
 from ..xas import XAS
 from .yamlExport import loadFromYaml
 from .ssrlExport import loadFromSSRL
-from .exportTools import convertDataHeader
 
 
 def loadOne(filename):
