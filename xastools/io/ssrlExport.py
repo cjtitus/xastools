@@ -1,7 +1,7 @@
 import numpy as np
 from os.path import exists, join
 from os import mkdir
-from .exportTools import inferColTypes
+from ..xas import inferColTypes
 
 
 def exportToSSRL(folder, data, header, namefmt="{sample}_{scan}.dat", c1="",
