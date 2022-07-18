@@ -30,7 +30,8 @@ def exportToSSRL(folder, data, header, namefmt="{sample}_{scan}.dat", c1="",
         if isinstance(metadata['scan'], (list, tuple)):
             metadata['scan'] = metadata['scan'][0]
 
-    motors = header['motors']
+    motors = {"entnslt": 0, "exslit": 0, "samplex": 0, "sampley": 0, "samplez": 0, "sampler": 0}
+    motors.update(header['motors'])
     channelinfo = header['channelinfo']
     cols = channelinfo.get('cols')
     weights = channelinfo.get('weights', None)

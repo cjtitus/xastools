@@ -3,7 +3,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy.signal import savgol_filter, argrelmax
 
 
-refEdges = {'o': 527, 'mn': 638, 'fe': 706.9, 'co': 779.1, 'ni': 852.7}
+refEdges = {'o': 527, 'mn': 638, 'fe': 706.9, 'co': 777.3, 'ni': 852.7}
 
 
 def at_least_2d(arr):

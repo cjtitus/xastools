@@ -30,9 +30,10 @@ def headerFromXAS(xas, data=None):
     return header
 
 
-def dataFromXAS(xas, norm=None, offsetMono=False, **kwargs):
+def dataFromXAS(xas, norm=None, offsetMono=False, exclude=[], **kwargs):
     # Will eventually deal with multiscans, etc
-    data = xas.data.copy(deep=True)
+    scans = xas.getIncludedScans(exclude)
+    data = xas.data.sel(scan=scans).copy(deep=True)
     cols = np.array(xas.channelinfo['cols'])
     if hasattr(xas.channelinfo, "coltypes"):
         coltypes = xas.channelinfo['coltypes']
@@ -44,7 +45,8 @@ def dataFromXAS(xas, norm=None, offsetMono=False, **kwargs):
                           offsetMono=offsetMono,
                           divisor=norm,
                           return_x=False,
-                          individual=True, **kwargs)
+                          individual=True, exclude=exclude, **kwargs)
+
     data.data.loc[{"ch": detectors}] = rawdata
     data = data.mean(dim="scan")
     return data

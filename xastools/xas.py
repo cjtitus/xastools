@@ -1,6 +1,5 @@
 import numpy as np
 import xarray as xr
-from six import string_types
 import matplotlib.pyplot as plt
 from xastools.utils import (find_mono_offset, correct_mono, normalize)
 from .io.exportTools import convertDataHeader
@@ -42,7 +41,8 @@ class XAS:
         scaninfo = {k: getattr(self, k, None) for k in self.scaninfokeys}
         scaninfo.update(getattr(self, 'scaninfo', {}))
         motors = getattr(self, 'motors', {})
-        header = {'scaninfo': scaninfo, 'motors': motors, 'channelinfo': self.channelinfo}
+        header = {'scaninfo': scaninfo, 'motors': motors,
+                  'channelinfo': self.channelinfo}
         return header
 
     def __add__(self, y):
@@ -76,24 +76,34 @@ class XAS:
         header = self.getHeader()
         return XAS(data, **header)
 
-    def getWeights(self, cols):
-        weights = self.data.weights.sel(ch=cols).copy()
+    def getIncludedScans(self, exclude):
+        scans = list(self.data.data.scan.data)
+        if type(exclude) == int:
+            exclude = [exclude]
+        for s in exclude:
+            scans.pop(scans.index(s))
+        return scans
+
+    def getWeights(self, cols, exclude=[]):
+        scans = self.getIncludedScans(exclude)
+        weights = self.data.weights.sel(ch=cols, scan=scans).copy()
         return weights.fillna(1)
 
-    def getOffsets(self, cols):
-        offsets = self.data.offsets.sel(ch=cols).copy()
+    def getOffsets(self, cols, exclude=[]):
+        scans = self.getIncludedScans(exclude)
+        offsets = self.data.offsets.sel(ch=cols, scan=scans).copy()
         return offsets.fillna(0)
 
-    def getCols(self, cols):
+    def getCols(self, cols, exclude=[]):
         """
         Returns a copy of the data object with the chosen columns
         """
-
-        return self.data.data.sel(ch=cols).copy()
+        scans = self.getIncludedScans(exclude)
+        return self.data.data.sel(ch=cols, scan=scans).copy()
 
     def getData(self, cols, divisor=None, xcol='MONO', individual=False,
                 offset=False, offsetMono=False, return_x=True,
-                weight=False, squeeze=True):
+                weight=False, squeeze=True, exclude=[]):
         """FIXME! briefly describe function
 
         :param cols: 
@@ -104,14 +114,14 @@ class XAS:
         :rtype: 
 
         """
-        x = self.getCols(xcol)
-        y = self.getCols(cols)
+        x = self.getCols(xcol, exclude)
+        y = self.getCols(cols, exclude)
 
         if offset:
-            o = self.getOffsets(cols)
+            o = self.getOffsets(cols, exclude)
             y -= o
         if weight:
-            w = self.getWeights(cols)
+            w = self.getWeights(cols, exclude)
             y /= w
         if divisor is not None:
             # wtf was this doing??
@@ -169,7 +179,8 @@ class XAS:
                     axlist.append(ax)
                 xsel = x.sel(scan=s).data
                 ysel = data.sel(scan=s).data
-                ax.plot(xsel, normalize(xsel, ysel, normType), label=f"Scan {s}")
+                ax.plot(xsel, normalize(xsel, ysel, normType),
+                        label=f"Scan {s}")
             ax.legend()
             return figlist, axlist
         else:
