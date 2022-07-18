@@ -23,7 +23,7 @@ def writeData(filename, scanData):
         np.savetxt(f, scanData, fmt=datafmt)
 
 
-def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml"):
+def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml", verbose=True):
     """Exports header, data to a YAML-based format
 
     :param folder: target folder for export
@@ -36,6 +36,8 @@ def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml"):
     """
 
     filename = join(folder, namefmt.format(**header['scaninfo']))
+    if verbose:
+        print(f"Exporting to {filename}")
     writeHeader(filename, header)
     writeData(filename, data)
 

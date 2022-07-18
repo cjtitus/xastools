@@ -3,7 +3,22 @@ from scipy.interpolate import UnivariateSpline
 from scipy.signal import savgol_filter, argrelmax
 
 
-refEdges = {'o': 527, 'mn': 638, 'fe': 706.9, 'co': 777.3, 'ni': 852.7}
+refEdges = {'o': 527, 'mn': 638, 'fe': 706.9, 'co': 779.1, 'ni': 852.7}
+roiMaster = {'felab': [680, 850], 'fell': [580, 640], 'ok': [490, 540],
+             'full': [150, 1400], 'tfy': [150, 1400], 'nk': [360, 420],
+             'ck': [230, 310], 'fk': [630, 690], 'bk': [150, 220],
+             'tilab': [413, 470],
+             'till': [360, 413], 'vlab': [490, 520], 'mnlab': [590, 660],
+             'mnll': [540, 590], 'nilab': [800, 880], 'nill': [700, 780],
+             'culab': [880, 960], 'cull': [760, 840], 'colab': [720, 800],
+             'coll': [640, 700], "znlab": [970, 1060], "znll": [840, 920],
+             'transfer': [-20, 100]}
+roiDefaults = {'b': ['bk'], 'c': ['ck'], 'n': ['nk'], 'ti': ['tilab', 'till'],
+               'v': ['vlab'], 'o': ['ok'], 'mn': ['mnlab', 'mnll'],
+               'f': ['fk'],
+               'fe': ['felab', 'fell'], 'co': ['colab', 'coll'],
+               'ni': ['nilab', 'nill'], 'cu': ['culab', 'cull'],
+               'zn': ['znlab', 'znll']}
 
 
 def at_least_2d(arr):
@@ -36,7 +51,7 @@ def ppNorm(y):
     :param ylow: optional, lower error bound
     :param yhigh: optional, upper error bound
     :returns: y with min(y) set to 0 and max(y) set to 1
-    :rtype: 
+    :rtype:
 
     """
     ymin = np.min(y, axis=-1, keepdims=True)
@@ -51,7 +66,7 @@ def areaNorm(x, y, start=0, end=None, offset=True):
     :param x: X-coordinates of data
     :param y: Y-coordinates of data
     :returns: y with total area normalized to 1
-    :rtype: 
+    :rtype:
 
     """
     if offset:
@@ -70,9 +85,9 @@ def tailNorm(y, start=0, end=-10, startRange=10, endRange=10):
     tailNorm essentially sets the pre-edge to 0, and the post-edge to 1.
     It works just like ppNorm, but for "min" uses the average of the first 10
     points, and for max uses the average of the last 10 points.
-    
+
     :param y: y data (counts)
-    
+
     """
     ymin = np.mean(y[start:start + startRange])
     if end < 0:
@@ -87,10 +102,10 @@ def normalize(x, y, normType):
     """Dispatch function for other normalization functions
 
     :param x: x data (always required for consistent api)
-    :param y: y data 
+    :param y: y data
     :param normType: one of ['pp', 'area', 'tail']
     :returns: normalized y
-    :rtype: 
+    :rtype:
 
     """
     if normType == "pp":

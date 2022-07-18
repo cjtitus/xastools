@@ -2,11 +2,45 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 from xastools.utils import (find_mono_offset, correct_mono, normalize)
-from .io.exportTools import convertDataHeader
 
+def inferColTypes(cols):
+    motorNames = ['Seconds', 'ENERGY_ENC', 'MONO']
+    sensorNames = ['TEMP']
+    coltypes = []
+    for c in cols:
+        if c in motorNames:
+            coltypes.append('motor')
+        elif c in sensorNames:
+            coltypes.append('sensor')
+        else:
+            coltypes.append('detector')
+    return coltypes
+
+def convertDataHeader(data, header):
+    scan = header['scaninfo'].pop('scan', None)
+    cols = header['channelinfo']['cols']
+    offsets = header['channelinfo'].pop('offsets', {})
+    weights = header['channelinfo'].pop('weights', {})
+    if "coltypes" not in header['channelinfo']:
+        coltypes = np.array(inferColTypes(cols))
+        header['channelinfo']['coltypes'] = coltypes
+    x = xr.DataArray(data, dims=['index', 'ch'], coords={'ch': cols})
+    offset_cols = list(offsets.keys())
+    offset_data = np.array([offsets[k] for k in offset_cols])
+    o = xr.DataArray(offset_data, dims=["ch"], coords=[offset_cols])
+    weight_cols = list(weights.keys())
+    weight_data = np.array([weights[k] for k in weight_cols])
+    w = xr.DataArray(weight_data, dims=["ch"], coords=[weight_cols])
+    d = xr.Dataset({"data": x, "offsets": o, "weights": w})
+
+    if isinstance(scan, int):
+        d = d.expand_dims({"scan": [scan]})
+    else:
+        d = d.expand_dims({"scan": [scan[0]]})
+    return d, header
 
 class XAS:
-    scaninfokeys = ['motor', 'scan', 'date', 'sample', 'loadid', 'command']
+    scaninfokeys = ['motor', 'date', 'sample', 'loadid', 'command']
 
     @classmethod
     def from_data_header(cls, data, header):
@@ -18,6 +52,9 @@ class XAS:
         return cls(arr, **h)
 
     def __init__(self, data, scaninfo={}, motors={}, channelinfo={}):
+        """Create an XAS object directly from a properly formatted xarray, 
+        and three metadata dictionaries
+        """
         for k in self.scaninfokeys:
             setattr(self, k, scaninfo.get(k, None))
         self.bintype = 'XAS'
@@ -36,6 +73,10 @@ class XAS:
         if not np.all(self.data == y.data):
             return False
         return True
+
+    @property
+    def columns(self):
+        return tuple(self.channelinfo['cols'])
 
     def getHeader(self):
         scaninfo = {k: getattr(self, k, None) for k in self.scaninfokeys}

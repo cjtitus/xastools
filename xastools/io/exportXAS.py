@@ -1,13 +1,16 @@
 import numpy as np
 from .yamlExport import exportToYaml
 from .ssrlExport import exportToSSRL
-from .exportTools import inferColTypes
+from ..xas import inferColTypes
 
 
 def headerFromXAS(xas, data=None):
     scaninfokeys = ['motor', 'date', 'sample', 'loadid', 'command']
     scaninfo = {k: getattr(xas, k, None) for k in scaninfokeys}
-    scaninfo['scan'] = sorted(xas.data.scan.values.tolist())
+    scan = sorted(xas.data.scan.values.tolist())
+    if len(scan) == 1:
+        scan = scan[0]
+    scaninfo['scan'] = scan 
     scaninfo.update(getattr(xas, 'scaninfo', {}))
     motors = getattr(xas, 'motors', {})
     channelinfokeys = ['cols']  # will require fixes for multiscans
@@ -52,15 +55,18 @@ def dataFromXAS(xas, norm=None, offsetMono=False, exclude=[], **kwargs):
     return data
 
 
-def exportXASToYaml(xas, folder, namefmt="{sample}_{scan}.yaml", **kwargs):
+def getDataAndHeader(xas, **kwargs):
     data = dataFromXAS(xas, **kwargs)
     header = headerFromXAS(xas, data)
     d = data.data.sel(ch=header['channelinfo']['cols']).values
-    exportToYaml(folder, d, header, namefmt)
+    return d, header
+
+
+def exportXASToYaml(xas, folder, namefmt="{sample}_{scan}.yaml", **kwargs):
+    data, header = getDataAndHeader(xas, **kwargs)
+    exportToYaml(folder, data, header, namefmt)
 
 
 def exportXASToSSRL(xas, folder, namefmt="{sample}_{scan}.dat", **kwargs):
-    data = dataFromXAS(xas, **kwargs)
-    header = headerFromXAS(xas, data)
-    d = data.data.sel(ch=header['channelinfo']['cols']).values
-    exportToSSRL(folder, d, header, namefmt)
+    data, header = getDataAndHeader(xas, **kwargs)
+    exportToSSRL(folder, data, header, namefmt)
