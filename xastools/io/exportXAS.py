@@ -62,11 +62,11 @@ def getDataAndHeader(xas, **kwargs):
     return d, header
 
 
-def exportXASToYaml(xas, folder, namefmt="{sample}_{scan}.yaml", **kwargs):
+def exportXASToYaml(xas, folder, namefmt="{sample}_{scan}.yaml", increment=True, **kwargs):
     data, header = getDataAndHeader(xas, **kwargs)
-    exportToYaml(folder, data, header, namefmt)
+    exportToYaml(folder, data, header, namefmt, increment=increment)
 
 
-def exportXASToSSRL(xas, folder, namefmt="{sample}_{scan}.dat", **kwargs):
+def exportXASToSSRL(xas, folder, namefmt="{sample}_{scan}.dat", increment=True, **kwargs):
     data, header = getDataAndHeader(xas, **kwargs)
-    exportToSSRL(folder, data, header, namefmt)
+    exportToSSRL(folder, data, header, namefmt, increment=increment)

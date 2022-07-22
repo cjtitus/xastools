@@ -1,5 +1,5 @@
 import yaml
-from os.path import join
+from os.path import join, exists
 import numpy as np
 
 
@@ -23,7 +23,7 @@ def writeData(filename, scanData):
         np.savetxt(f, scanData, fmt=datafmt)
 
 
-def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml", verbose=True):
+def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml", verbose=True, increment=False):
     """Exports header, data to a YAML-based format
 
     :param folder: target folder for export
@@ -36,6 +36,11 @@ def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml", verbose=T
     """
 
     filename = join(folder, namefmt.format(**header['scaninfo']))
+    if increment:
+        base_filename = filename
+        i = 1
+        while exists(filename):
+            filename = base_filename + f'_{i}'
     if verbose:
         print(f"Exporting to {filename}")
     writeHeader(filename, header)

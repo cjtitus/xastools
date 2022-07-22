@@ -54,8 +54,8 @@ def ppNorm(y):
     :rtype:
 
     """
-    ymin = np.min(y, axis=-1, keepdims=True)
-    ymax = np.max(y, axis=-1, keepdims=True)
+    ymin = np.min(y, axis=0, keepdims=True)
+    ymax = np.max(y, axis=0, keepdims=True)
     ynorm = (y - ymin)/(ymax - ymin)
 
     return ynorm
@@ -73,9 +73,7 @@ def areaNorm(x, y, start=0, end=None, offset=True):
         sub = np.mean(y[start:start+10, ...], axis=0)
     else:
         sub = 0
-    area = np.trapz(y[start:end, ...] - sub, x[start:end, ...])
-    if len(y.shape) == 2:
-        area = area.reshape((area.shape[0], 1))
+    area = np.trapz(y[start:end, ...] - sub, x[start:end, ...], axis=0)
 
     return (y - sub)/area
 
@@ -89,10 +87,10 @@ def tailNorm(y, start=0, end=-10, startRange=10, endRange=10):
     :param y: y data (counts)
 
     """
-    ymin = np.mean(y[start:start + startRange])
+    ymin = np.mean(y[start:start + startRange], axis=0)
     if end < 0:
         end = len(y) + end
-    ymax = np.mean(y[end:end + endRange])
+    ymax = np.mean(y[end:end + endRange], axis=0)
     ynorm = (y - ymin)/(ymax - ymin)
 
     return ynorm

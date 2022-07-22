@@ -5,7 +5,7 @@ from ..xas import inferColTypes
 
 
 def exportToSSRL(folder, data, header, namefmt="{sample}_{scan}.dat", c1="",
-                 c2="", headerUpdates={}, strict=False, verbose=True):
+                 c2="", headerUpdates={}, strict=False, verbose=True, increment=False):
     """Exports to Graham's ASCII SSRL data format
 
     :param folder: Export folder (filename will be auto-generated)
@@ -21,6 +21,12 @@ def exportToSSRL(folder, data, header, namefmt="{sample}_{scan}.dat", c1="",
     """
 
     filename = join(folder, namefmt.format(**header['scaninfo']))
+    if increment:
+        base_filename = filename
+        i = 1
+        while exists(filename):
+            filename = base_filename + f'_{i}'
+
     if verbose:
         print(f"Exporting to {filename}")
     metadata = {}
