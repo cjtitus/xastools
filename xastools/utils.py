@@ -159,11 +159,12 @@ def find_y_peak(xlist, ylist, center, width=5, smooth=False):
     return xloc
 
 
-def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
+def find_mono_offset(xlist, ylist, edge, width=5, smooth=False, shift=0):
     """
     Default alignment method for data that has a good peak
     xlist.shape = (nscans, npts)
     ylist.shape = (nscans, npts)
+    shift : amount to shift nominal peak location when finding peak
     """
     if edge in refEdges:
         nominal = refEdges[edge]
@@ -172,7 +173,7 @@ def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
             nominal = float(edge)
         except:
             print("Could not understand edge ")
-    xloc = find_y_peak(xlist, ylist, nominal, width, smooth)
+    xloc = find_y_peak(xlist, ylist, nominal + shift, width, smooth)
     xdelta = nominal - np.array(xloc)
     meanDelta = np.mean(xdelta)
     if np.std(xdelta) > 0.3:
