@@ -192,7 +192,7 @@ class XAS:
             return y
 
     def plot(self, col, individual=False, nstack=7, ax=None, label=None,
-             normType=None, **kwargs):
+             normType=None, titlefmt="{sample} {scaninfo['element']} XAS", **kwargs):
         """See getData for all kwargs
 
         :param col: 
@@ -206,6 +206,7 @@ class XAS:
         """
 
         x, data = self.getData(col, individual=individual, **kwargs)
+        title = titlefmt.format(self.__dict__)
         if individual:
             for n, s in enumerate(data.scan.data):
                 if n % nstack == 0:
@@ -223,6 +224,7 @@ class XAS:
                 ax.plot(xsel, normalize(xsel, ysel, normType),
                         label=f"Scan {s}")
             ax.legend()
+            ax.set_title(title)
             return figlist, axlist
         else:
             if ax is None:
@@ -236,6 +238,7 @@ class XAS:
             data = data.data
             ax.plot(x, normalize(x, data, normType), label=label)
             ax.legend()
+            ax.set_title(title)
         return fig, ax
 
     def setMonoOffset(self, deltaE):
