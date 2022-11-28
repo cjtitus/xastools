@@ -12,12 +12,14 @@ roiMaster = {'felab': [680, 850], 'fell': [580, 640], 'ok': [490, 540],
              'mnll': [540, 590], 'nilab': [800, 880], 'nill': [700, 780],
              'culab': [880, 960], 'cull': [760, 840], 'colab': [720, 800],
              'coll': [640, 700], "znlab": [970, 1060], "znll": [840, 920],
+             'cemab': [840, 920], 'ceml': [620, 720],
              'transfer': [-20, 100]}
 roiDefaults = {'b': ['bk'], 'c': ['ck'], 'n': ['nk'], 'ti': ['tilab', 'till'],
                'v': ['vlab'], 'o': ['ok'], 'mn': ['mnlab', 'mnll'],
                'f': ['fk'],
                'fe': ['felab', 'fell'], 'co': ['colab', 'coll'],
-               'ni': ['nilab', 'nill'], 'cu': ['culab', 'cull'],
+               'ni': ['nilab', 'nill'], 'ce': ['cemab', 'ceml'],
+               'cu': ['culab', 'cull'],
                'zn': ['znlab', 'znll']}
 
 

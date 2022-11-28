@@ -160,15 +160,15 @@ class XAS:
 
         if offset:
             o = self.getOffsets(cols, exclude)
-            y -= o
+            y = y-o
         if weight:
             w = self.getWeights(cols, exclude)
-            y /= w
+            y = y/w
         if divisor is not None:
             # wtf was this doing??
             # div = np.cumprod(self.getCols(divisor), axis=1)[:, [-1], ...]
             div = self.getCols(divisor)
-            y /= div
+            y = y/div
 
         if offsetMono:
             deltaE = self.getOffsets('MONO')
