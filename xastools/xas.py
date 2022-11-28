@@ -206,7 +206,7 @@ class XAS:
         """
 
         x, data = self.getData(col, individual=individual, **kwargs)
-        title = titlefmt.format(self.__dict__)
+        title = titlefmt.format(**self.__dict__)
         if individual:
             for n, s in enumerate(data.scan.data):
                 if n % nstack == 0:
