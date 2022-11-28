@@ -6,21 +6,22 @@ from scipy.signal import savgol_filter, argrelmax
 refEdges = {'o': 527, 'mn': 638, 'fe': 706.9, 'co': 779.1, 'ni': 852.7}
 roiMaster = {'felab': [680, 850], 'fell': [580, 640], 'ok': [490, 540],
              'full': [150, 1400], 'tfy': [150, 1400], 'nk': [360, 420],
-             'ck': [230, 310], 'fk': [630, 690], 'bk': [150, 220],
+             'ck': [230, 310], 'srm': [230, 300], 'fk': [630, 690], 'bk': [150, 220],
              'tilab': [413, 470],
              'till': [360, 413], 'vlab': [490, 520], 'mnlab': [590, 660],
              'mnll': [540, 590], 'nilab': [800, 880], 'nill': [700, 780],
              'culab': [880, 960], 'cull': [760, 840], 'colab': [720, 800],
              'coll': [640, 700], "znlab": [970, 1060], "znll": [840, 920],
              'cemab': [840, 920], 'ceml': [620, 720],
+             "nak": [1040, 1100],
              'transfer': [-20, 100]}
-roiDefaults = {'b': ['bk'], 'c': ['ck'], 'n': ['nk'], 'ti': ['tilab', 'till'],
+roiDefaults = {'b': ['bk'], 'c': ['ck'], 'sr': ['srm'], 'n': ['nk'], 'ti': ['tilab', 'till'],
                'v': ['vlab'], 'o': ['ok'], 'mn': ['mnlab', 'mnll'],
                'f': ['fk'],
                'fe': ['felab', 'fell'], 'co': ['colab', 'coll'],
-               'ni': ['nilab', 'nill'], 'ce': ['cemab', 'ceml'],
-               'cu': ['culab', 'cull'],
-               'zn': ['znlab', 'znll']}
+               'ce': ['cemab', 'ceml'],
+               'ni': ['nilab', 'nill'], 'cu': ['culab', 'cull'],
+               'zn': ['znlab', 'znll'], "na": ["nak"]}
 
 
 def at_least_2d(arr):
@@ -161,11 +162,12 @@ def find_y_peak(xlist, ylist, center, width=5, smooth=False):
     return xloc
 
 
-def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
+def find_mono_offset(xlist, ylist, edge, width=5, smooth=False, shift=0):
     """
     Default alignment method for data that has a good peak
     xlist.shape = (nscans, npts)
     ylist.shape = (nscans, npts)
+    shift : amount to shift nominal peak location when finding peak
     """
     if edge in refEdges:
         nominal = refEdges[edge]
@@ -174,7 +176,7 @@ def find_mono_offset(xlist, ylist, edge, width=5, smooth=False):
             nominal = float(edge)
         except:
             print("Could not understand edge ")
-    xloc = find_y_peak(xlist, ylist, nominal, width, smooth)
+    xloc = find_y_peak(xlist, ylist, nominal + shift, width, smooth)
     xdelta = nominal - np.array(xloc)
     meanDelta = np.mean(xdelta)
     if np.std(xdelta) > 0.3:

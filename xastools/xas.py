@@ -51,7 +51,7 @@ class XAS:
         arr, h = convertDataHeader(data, header)
         return cls(arr, **h)
 
-    def __init__(self, data, scaninfo={}, motors={}, channelinfo={}):
+    def __init__(self, data, scaninfo={}, motors={}, channelinfo={}, **kwargs):
         """Create an XAS object directly from a properly formatted xarray, 
         and three metadata dictionaries
         """
@@ -241,7 +241,7 @@ class XAS:
     def setMonoOffset(self, deltaE):
         self.data['offsets'].loc[dict(ch="MONO")] = deltaE
 
-    def findMonoOffset(self, edge, col='REF', width=5, smooth=False, **kwargs):
+    def findMonoOffset(self, edge, col='REF', width=5, smooth=False, shift=0, **kwargs):
         """
         edge : String or number, passed to find_mono_offset
         col : Column to use for alignment
@@ -249,7 +249,7 @@ class XAS:
         **kwargs : passed to getData
         """
         x, y = self.getData(col, individual=True, **kwargs)
-        deltaE = find_mono_offset(x.data, y.data, edge, width, smooth)
+        deltaE = find_mono_offset(x.data, y.data, edge, width, smooth, shift)
         self.setMonoOffset(deltaE)
         return deltaE
 
