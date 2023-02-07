@@ -192,7 +192,7 @@ class XAS:
             return y
 
     def plot(self, col, individual=False, nstack=7, ax=None, label=None,
-             normType=None, titlefmt="{sample} {scaninfo['element']} XAS", **kwargs):
+             normType=None, titlefmt="{sample} {scaninfo[element]} XAS", **kwargs):
         """See getData for all kwargs
 
         :param col: 
