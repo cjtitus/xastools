@@ -144,7 +144,7 @@ class XAS:
 
     def getData(self, cols, divisor=None, xcol='MONO', individual=False,
                 offset=False, offsetMono=False, return_x=True,
-                weight=False, squeeze=True, exclude=[]):
+                weight=False, squeeze=True, aggregate='sum', exclude=[]):
         """FIXME! briefly describe function
 
         :param cols: 
@@ -180,7 +180,10 @@ class XAS:
 
         if not individual:
             x = x.mean(dim='scan')
-            y = y.sum(dim='scan')
+            if aggregate == 'sum':
+                y = y.sum(dim='scan')
+            elif aggregate == 'mean':
+                y = y.mean(dim='scan')
 
         if squeeze:
             x = x.squeeze()
