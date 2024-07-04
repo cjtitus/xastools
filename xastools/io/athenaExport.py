@@ -85,9 +85,8 @@ Weights:
 {weights}
 Offsets:
 {offsets}
-------------------------------------------------------------------------------------
-{cols}
-""".format(
+-------------------------------------------------------------------------------
+{cols}""".format(
         **metadata, **motors
     )
     headerstring = add_comment_to_lines(headerstring, "#")
