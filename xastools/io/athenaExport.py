@@ -92,6 +92,7 @@ Offsets:
     headerstring = add_comment_to_lines(headerstring, "#")
     with open(filename, "w") as f:
         f.write(headerstring)
+        f.write("\n")
         np.savetxt(f, data, fmt=" %8.8e")
 
 
