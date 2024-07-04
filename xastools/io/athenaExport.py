@@ -92,7 +92,7 @@ Offsets:
     headerstring = add_comment_to_lines(headerstring, "#")
     with open(filename, "w") as f:
         f.write(headerstring)
-        np.savetxt(f, data, fmt=" %8g")
+        np.savetxt(f, data, fmt=" %8.8e")
 
 
 def add_comment_to_lines(multiline_string, comment_char="#"):

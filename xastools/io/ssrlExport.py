@@ -100,7 +100,7 @@ Data:
 
     with open(filename, "w") as f:
         f.write(headerstring)
-        np.savetxt(f, data, fmt=" %8g")
+        np.savetxt(f, data, fmt=" %8.8e")
 
 
 def makeWeightStr(weights, cols):

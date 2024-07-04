@@ -6,6 +6,7 @@ import numpy as np
 def writeHeader(filename, header):
     def ndrep(dumper, data):
         return dumper.represent_data([float(d) for d in data])
+
     yaml.add_representer(np.ndarray, ndrep)
 
     def nintrep(dumper, data):
@@ -13,34 +14,36 @@ def writeHeader(filename, header):
 
     yaml.add_representer(np.integer, nintrep)
 
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         yaml.dump(header, f, explicit_end=True)
 
 
 def writeData(filename, scanData):
-    datafmt = ' %8g'
-    with open(filename, 'ba') as f:
+    datafmt = " %8.8e"
+    with open(filename, "ba") as f:
         np.savetxt(f, scanData, fmt=datafmt)
 
 
-def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml", verbose=True, increment=False):
+def exportToYaml(
+    folder, data, header, namefmt="{sample}_{scan}.yaml", verbose=True, increment=False
+):
     """Exports header, data to a YAML-based format
 
     :param folder: target folder for export
     :param data: numpy array of data
     :param header: Header dictionary consisting of 'scaninfo', 'motors', 'channelinfo' subdictionaries
     :param namefmt: format string consisting of keys in scaninfo dictionary
-    :returns: 
-    :rtype: 
+    :returns:
+    :rtype:
 
     """
 
-    filename = join(folder, namefmt.format(**header['scaninfo']))
+    filename = join(folder, namefmt.format(**header["scaninfo"]))
     if increment:
         base_filename = filename
         i = 1
         while exists(filename):
-            filename = base_filename + f'_{i}'
+            filename = base_filename + f"_{i}"
     if verbose:
         print(f"Exporting to {filename}")
     writeHeader(filename, header)
@@ -48,7 +51,7 @@ def exportToYaml(folder, data, header, namefmt="{sample}_{scan}.yaml", verbose=T
 
 
 def loadFromYaml(filename):
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         document = f.readlines()
     yamlEnd = document.index("...\n") + 1
     yamlStr = "".join(document[:yamlEnd])
