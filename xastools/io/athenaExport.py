@@ -68,6 +68,7 @@ def exportToAthena(
     metadata["cols"] = colStr
     metadata["weights"] = weightStr
     metadata["offsets"] = offsetStr
+    metadata["rois"] = channelinfo.get("rois", {})
     metadata["c1"] = c1
     metadata["c2"] = c2
 
@@ -85,6 +86,8 @@ Weights:
 {weights}
 Offsets:
 {offsets}
+ROIS:
+{rois}
 -------------------------------------------------------------------------------
 {cols}""".format(
         **metadata, **motors
